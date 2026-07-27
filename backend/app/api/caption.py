@@ -1,8 +1,11 @@
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, Depends
+from sqlalchemy.orm import Session
 import shutil
 import os
 
 from app.ai.caption_service import generate_caption
+from app.database.dependencies import get_db
+from app.crud.image_crud import create_image
 
 router = APIRouter()
 
@@ -12,7 +15,10 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 @router.post("/caption")
-async def caption_image(file: UploadFile = File(...)):
+async def caption_image(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
 
     file_path = os.path.join(
         UPLOAD_FOLDER,
@@ -24,7 +30,15 @@ async def caption_image(file: UploadFile = File(...)):
 
     caption = generate_caption(file_path)
 
+    image = create_image(
+        db,
+        filename=file.filename,
+        caption=caption
+    )
+
     return {
-        "filename": file.filename,
-        "caption": caption
+        "id": image.id,
+        "filename": image.filename,
+        "caption": image.caption,
+        "uploaded_at": image.uploaded_at
     }
