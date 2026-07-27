@@ -1,5 +1,10 @@
 from fastapi import FastAPI
 
+from app.database.database import Base, engine
+from app.models.image import Image
+
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI(
     title="VisionNarrator API",
     description="AI-powered Image Caption Generator and Semantic Search",
