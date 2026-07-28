@@ -1,9 +1,11 @@
 from fastapi import APIRouter, UploadFile, File, Depends
 from sqlalchemy.orm import Session
+
 import shutil
 import os
 
 from app.ai.caption_service import generate_caption
+from app.ai.embedding_service import generate_embedding
 from app.database.dependencies import get_db
 from app.crud.image_crud import create_image
 
@@ -30,10 +32,13 @@ async def caption_image(
 
     caption = generate_caption(file_path)
 
+    embedding = generate_embedding(caption)
+
     image = create_image(
         db,
         filename=file.filename,
-        caption=caption
+        caption=caption,
+        embedding=embedding
     )
 
     return {

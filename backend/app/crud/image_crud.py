@@ -1,11 +1,19 @@
+import json
 from sqlalchemy.orm import Session
 from app.models.image import Image
 
 
-def create_image(db: Session, filename: str, caption: str):
+def create_image(
+    db: Session,
+    filename: str,
+    caption: str,
+    embedding: list
+):
+
     image = Image(
         filename=filename,
-        caption=caption
+        caption=caption,
+        embedding=json.dumps(embedding)
     )
 
     db.add(image)
@@ -26,3 +34,10 @@ def get_image_by_id(db: Session, image_id: int):
 def delete_image(db: Session, image: Image):
     db.delete(image)
     db.commit()
+    
+def get_images_with_embeddings(db: Session):
+    return (
+        db.query(Image)
+        .filter(Image.embedding != None)
+        .all()
+    )
