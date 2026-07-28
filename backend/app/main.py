@@ -4,6 +4,7 @@ from app.database.database import Base, engine
 from app.models.image import Image
 from app.api.upload import router as upload_router
 from app.api.caption import router as caption_router
+from app.api.images import router as images_router
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -13,6 +14,7 @@ app = FastAPI(
 )
 app.include_router(upload_router)
 app.include_router(caption_router)
+app.include_router(images_router)
 
 
 @app.get("/")
