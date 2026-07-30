@@ -41,3 +41,10 @@ def get_images_with_embeddings(db: Session):
         .filter(Image.embedding != None)
         .all()
     )
+
+def get_image_by_filename(db: Session, filename: str):
+    return (
+        db.query(Image)
+        .filter(Image.filename == filename)
+        .first()
+    )

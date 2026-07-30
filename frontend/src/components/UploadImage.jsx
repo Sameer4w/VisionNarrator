@@ -30,6 +30,17 @@ function UploadImage() {
 
       const response = await api.post("/caption", formData);
 
+      if (response.data.duplicate) {
+
+          const uploadAgain = window.confirm(
+              "⚠️ This image already exists.\n\nDo you want to upload it again?"
+          );
+
+          if (!uploadAgain) {
+              return;
+          }
+      }
+
       setCaption(response.data.caption);
 
     } catch (error) {
@@ -47,38 +58,76 @@ function UploadImage() {
 
       <br />
 
+      <label className="file-label">
+
+      Choose Image
+
       <input
-        type="file"
-        accept="image/*"
-        onChange={handleFileChange}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
       />
+
+      </label>
 
       <br />
       <br />
 
       {preview && (
         <img
-          src={preview}
-          alt="preview"
-          width="300"
-          style={{ borderRadius: "10px" }}
+
+            src={preview}
+
+            alt="preview"
+
+            className="preview"
+
         />
       )}
 
       <br />
       <br />
 
-      <button onClick={handleUpload}>
-        {loading ? "Generating..." : "Generate Caption"}
+      <button
+          onClick={handleUpload}
+          disabled={loading}
+      >
+          {loading ? "⏳ Generating Caption..." : "🤖 Generate Caption"}
       </button>
 
       <br />
       <br />
 
+      {loading && (
+          <p
+              style={{
+                  marginTop:"20px",
+                  color:"#2563eb",
+                  fontWeight:"bold"
+              }}
+          >
+              <p className="loading">
+                  🤖 AI is analyzing your image...
+              </p>
+          </p>
+      )}
+
       {caption && (
         <>
-          <h3>Caption</h3>
-          <p>{caption}</p>
+          <h3>✨ AI Caption</h3>
+
+              <br/>
+
+              <p
+              style={{
+              fontSize:"18px",
+              color:"#334155"
+              }}
+              >
+              <div className="caption-box">
+                  {caption}
+              </div>
+              </p>
         </>
       )}
 
