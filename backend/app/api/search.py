@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.database.dependencies import get_db
 from app.ai.embedding_service import generate_embedding
 from app.ai.search_service import calculate_similarity
 from app.crud.image_crud import get_images_with_embeddings
+from app.database.dependencies import get_db
+from app.crud.dashboard_crud import increase_search_count
 
 router = APIRouter(
     prefix="/search",
@@ -17,6 +18,13 @@ def semantic_search(
     query: str,
     db: Session = Depends(get_db)
 ):
+    """
+    Perform semantic search on stored image captions.
+    """
+
+    increase_search_count(db)
+    
+    query = query.strip()
 
     query_embedding = generate_embedding(query)
 
@@ -31,15 +39,17 @@ def semantic_search(
             image.embedding
         )
 
-        results.append({
-            "id": image.id,
-            "filename": image.filename,
-            "caption": image.caption,
-            "score": round(similarity, 4)
-        })
+        results.append(
+            {
+                "id": image.id,
+                "filename": image.filename,
+                "caption": image.caption,
+                "score": round(similarity, 4)
+            }
+        )
 
     results.sort(
-        key=lambda x: x["score"],
+        key=lambda image: image["score"],
         reverse=True
     )
 

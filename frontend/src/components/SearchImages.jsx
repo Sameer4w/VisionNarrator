@@ -1,115 +1,345 @@
 import { useState } from "react";
 import api from "../api/api";
 
-function SearchImages() {
+import toast from "react-hot-toast";
+import Swal from "sweetalert2";
 
-    const [query, setQuery] = useState("");
-    const [results, setResults] = useState([]);
-    const [searched, setSearched] = useState(false);
+import { motion } from "framer-motion";
+
+import {
+  FaSearch,
+  FaTrash,
+  FaImage,
+  FaTimes
+} from "react-icons/fa";
+
+function SearchImages({ refreshGallery }) {
+
+  const [query, setQuery] = useState("");
+
+  const [results, setResults] = useState([]);
+
+  const [searched, setSearched] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+
+  const [selectedImage, setSelectedImage] = useState(null);
 
     const handleSearch = async () => {
 
-        if (!query.trim()) {
-            alert("Enter a search query.");
-            return;
+    if (!query.trim()) {
+
+      toast.error("Enter a search query.");
+
+      return;
+
+    }
+
+    try {
+
+      setLoading(true);
+
+      const response = await api.get(
+        "/search",
+        {
+          params: {
+            query
+          }
         }
+      );
 
-        try {
+      setResults(response.data);
 
-            const response = await api.get("/search", {
-                params: {
-                    query: query
-                }
-            });
+      setSearched(true);
 
-            setResults(response.data);
-            setSearched(true);
+      toast.success(
+        `${response.data.length} images found`
+      );
 
-        } catch (error) {
-            console.error(error);
-            alert("Search failed.");
-        }
-    };
+    } catch (error) {
 
-    return (
+      console.error(error);
 
-        <div className="card">
+      toast.error("Search failed.");
 
-            <h2>Semantic Search</h2>
+    } finally {
 
-            <br />
+      setLoading(false);
 
-            <input
-                type="text"
-                placeholder="Search images..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-            />
+    }
 
-            <br />
-            <br />
+  };
 
-            <button onClick={handleSearch}>
-                Search
-            </button>
+    const handleDelete = async (id) => {
 
-            <br />
-            <br />
+    const result = await Swal.fire({
 
-            {
-                results.map((image) => (
+      title: "Delete Image?",
 
-                    <div
-                        key={image.id}
-                        style={{
-                            background: "#ffffff",
-                            padding: "20px",
-                            borderRadius: "12px",
-                            boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-                            marginBottom: "20px"
-                        }}
-                    >
-                        <img
-                            src={`http://127.0.0.1:8000/uploads/${image.filename}`}
-                            alt={image.filename}
-                            width="250"
-                            style={{
-                                borderRadius: "10px",
-                                marginBottom: "15px"
-                            }}
-                        />
+      text: "This action cannot be undone.",
 
-                        <h3>{image.filename}</h3>
+      icon: "warning",
 
-                        <p>
-                            <strong>Caption:</strong> {image.caption}
-                        </p>
+      showCancelButton: true,
 
-                        <p>
-                            ⭐ Similarity Score:
-                            <strong> {(image.score * 100).toFixed(1)}%</strong>
-                        </p>
+      confirmButtonColor: "#dc2626",
 
-                    </div>
+      confirmButtonText: "Delete"
 
-                ))
-            }
+    });
 
-            {searched && results.length === 0 && (
-                <p
-                    style={{
-                        textAlign:"center",
-                        color:"gray",
-                        marginTop:"20px"
-                    }}
-                >
-                    No matching images found.
-                </p>
-            )}
+    if (!result.isConfirmed) return;
 
-        </div>
+    try {
 
+      await api.delete(`/images/${id}`);
+
+      setResults(
+        results.filter(
+          image => image.id !== id
+        )
+      );
+
+      refreshGallery();
+
+    toast.success(
+        "Image deleted successfully."
     );
+
+    } catch (error) {
+
+      console.error(error);
+
+      toast.error("Delete failed.");
+
+    }
+
+  };
+
+    const openImage = (image) => {
+
+    setSelectedImage(image);
+
+  };
+
+  const closeImage = () => {
+
+    setSelectedImage(null);
+
+  };
+
+  return (
+
+    <motion.section
+      id="search"
+      className="card search-card"
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+
+      <h2 className="section-title">
+        <FaSearch /> Semantic Image Search
+      </h2>
+
+      <div className="search-box">
+
+        <input
+          type="text"
+          placeholder="Search using natural language..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+
+        <button
+          className="primary-btn"
+          onClick={handleSearch}
+        >
+          <FaSearch />
+          Search
+        </button>
+
+      </div>
+
+      {
+        loading && (
+
+          <div className="ai-loader">
+
+            <div className="spinner"></div>
+
+            <p>Searching images...</p>
+
+          </div>
+
+        )
+      }
+
+      {
+        searched &&
+        !loading &&
+        results.length === 0 && (
+
+          <div className="empty-state">
+
+            <FaImage size={60} />
+
+            <h3>No matching images found</h3>
+
+            <p>Try another keyword.</p>
+
+          </div>
+
+        )
+      }
+
+      <div className="image-grid">
+
+        {
+          results.map((image, index) => (
+
+            <motion.div
+              key={image.id}
+              className="image-card"
+              initial={{
+                opacity: 0,
+                y: 25
+              }}
+              animate={{
+                opacity: 1,
+                y: 0
+              }}
+              transition={{
+                delay: index * 0.1
+              }}
+            >
+
+              <img
+                src={`http://127.0.0.1:8000/uploads/${image.filename}`}
+                alt={image.filename}
+                className="search-image"
+                onClick={() => openImage(image)}
+              />
+
+              <div className="image-info">
+
+                <h3>{image.filename}</h3>
+
+                <p>
+
+                  <strong>Caption:</strong>
+
+                  {image.caption}
+
+                </p>
+
+                <div className="score-box">
+
+                  <span>
+
+                    Similarity
+
+                  </span>
+
+                  <strong>
+
+                    {(image.score * 100).toFixed(1)}%
+
+                  </strong>
+
+                </div>
+
+                <div className="progress">
+
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: `${image.score * 100}%`
+                    }}
+                  ></div>
+
+                </div>
+
+                <button
+                  className="danger-btn"
+                  onClick={() => handleDelete(image.id)}
+                >
+
+                  <FaTrash />
+
+                  Delete
+
+                </button>
+
+              </div>
+
+            </motion.div>
+
+          ))
+        }
+
+      </div>
+
+      {
+        selectedImage && (
+
+          <div
+            className="image-modal"
+            onClick={closeImage}
+          >
+
+            <div
+              className="image-modal-content"
+              onClick={(e) => e.stopPropagation()}
+            >
+
+              <button
+                className="close-btn"
+                onClick={closeImage}
+              >
+
+                <FaTimes />
+
+              </button>
+
+              <img
+                src={`http://127.0.0.1:8000/uploads/${selectedImage.filename}`}
+                alt={selectedImage.filename}
+              />
+
+              <h2>
+
+                {selectedImage.filename}
+
+              </h2>
+
+              <p>
+
+                <strong>Caption:</strong>
+
+                {selectedImage.caption}
+
+              </p>
+
+              <p>
+
+                <strong>Similarity:</strong>
+
+                {(selectedImage.score * 100).toFixed(1)}%
+
+              </p>
+
+            </div>
+
+          </div>
+
+        )
+      }
+
+    </motion.section>
+
+  );
+
 }
 
 export default SearchImages;
