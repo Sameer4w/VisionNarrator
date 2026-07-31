@@ -16,7 +16,8 @@ def generate_embedding(text: str) -> list:
         headers=headers,
         json={
             "inputs": text
-        }
+        },
+        timeout=60
     )
 
     if response.status_code != 200:

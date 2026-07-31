@@ -3,6 +3,8 @@ import requests
 
 HF_TOKEN = os.getenv("HF_TOKEN")
 
+print("HF_TOKEN exists:", HF_TOKEN is not None)
+
 API_URL = "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base"
 
 headers = {
@@ -17,7 +19,8 @@ def generate_caption(image_path: str) -> str:
     response = requests.post(
         API_URL,
         headers=headers,
-        data=image_bytes
+        data=image_bytes,
+        timeout=60
     )
 
     if response.status_code != 200:
