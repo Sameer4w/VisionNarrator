@@ -148,12 +148,17 @@ function UploadImage({
       refreshGallery();
 
     } catch (error) {
+    console.log(error);
 
-      toast.error("Upload failed.");
+    if (error.response) {
+        console.log(error.response.data);
+        console.log(error.response.status);
 
-      console.error(error);
-
-    } finally {
+        toast.error(error.response.data.detail || "Server Error");
+    } else {
+        toast.error(error.message);
+    }
+} finally {
 
       setLoading(false);
 

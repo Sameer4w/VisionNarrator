@@ -1,19 +1,28 @@
 import os
-from huggingface_hub import InferenceClient
+import requests
 
-client = InferenceClient(
-    provider="hf-inference",
-    api_key=os.getenv("HF_TOKEN"),
-)
+HF_TOKEN = os.getenv("HF_TOKEN")
+
+API_URL = "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base"
+
+headers = {
+    "Authorization": f"Bearer {HF_TOKEN}"
+}
 
 
 def generate_caption(image_path: str):
     with open(image_path, "rb") as f:
-        image_bytes = f.read()
+        image = f.read()
 
-    result = client.image_to_text(
-        image_bytes,
-        model="Salesforce/blip-image-captioning-base",
+    response = requests.post(
+        API_URL,
+        headers=headers,
+        data=image,
+        timeout=120
     )
 
-    return result.generated_text
+    response.raise_for_status()
+
+    result = response.json()
+
+    return result[0]["generated_text"]
