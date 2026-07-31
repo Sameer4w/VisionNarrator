@@ -1,42 +1,28 @@
-from PIL import Image
-from transformers import BlipForConditionalGeneration, BlipProcessor
-import torch
+import os
+import requests
 
-# Load BLIP model and processor only once
-processor = BlipProcessor.from_pretrained(
-    "Salesforce/blip-image-captioning-base"
-)
+HF_TOKEN = os.getenv("HF_TOKEN")
 
-model = BlipForConditionalGeneration.from_pretrained(
-    "Salesforce/blip-image-captioning-base"
-)
+API_URL = "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base"
 
-# Put the model in evaluation mode
-model.eval()
+headers = {
+    "Authorization": f"Bearer {HF_TOKEN}"
+}
 
 
 def generate_caption(image_path: str) -> str:
-    """
-    Generate an AI caption for an image.
-    """
+    with open(image_path, "rb") as f:
+        image_bytes = f.read()
 
-    image = Image.open(image_path).convert("RGB")
-
-    inputs = processor(
-        image,
-        return_tensors="pt"
+    response = requests.post(
+        API_URL,
+        headers=headers,
+        data=image_bytes
     )
 
-    # Disable gradient calculation during inference
-    with torch.no_grad():
-        output = model.generate(
-            **inputs,
-            max_new_tokens=30
-        )
+    if response.status_code != 200:
+        raise Exception(response.text)
 
-    caption = processor.decode(
-        output[0],
-        skip_special_tokens=True
-    )
+    result = response.json()
 
-    return caption
+    return result[0]["generated_text"]

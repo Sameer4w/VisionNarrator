@@ -1,19 +1,27 @@
-from sentence_transformers import SentenceTransformer
+import os
+import requests
 
-# Load the embedding model only once
-model = SentenceTransformer(
-    "all-MiniLM-L6-v2"
-)
+HF_TOKEN = os.getenv("HF_TOKEN")
+
+API_URL = "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2"
+
+headers = {
+    "Authorization": f"Bearer {HF_TOKEN}"
+}
 
 
 def generate_embedding(text: str) -> list:
-    """
-    Generate a vector embedding for the given text.
-    """
-
-    embedding = model.encode(
-        text,
-        convert_to_numpy=True
+    response = requests.post(
+        API_URL,
+        headers=headers,
+        json={
+            "inputs": text
+        }
     )
 
-    return embedding.tolist()
+    if response.status_code != 200:
+        raise Exception(response.text)
+
+    embedding = response.json()
+
+    return embedding
