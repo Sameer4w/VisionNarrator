@@ -1,28 +1,17 @@
 import os
-import requests
+import google.generativeai as genai
+from PIL import Image
 
-HF_TOKEN = os.getenv("HF_TOKEN")
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-API_URL = "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base"
-
-headers = {
-    "Authorization": f"Bearer {HF_TOKEN}"
-}
-
+model = genai.GenerativeModel("gemini-2.5-flash")
 
 def generate_caption(image_path: str):
-    with open(image_path, "rb") as f:
-        image = f.read()
+    image = Image.open(image_path)
 
-    response = requests.post(
-        API_URL,
-        headers=headers,
-        data=image,
-        timeout=120
-    )
+    response = model.generate_content([
+        "Generate a short descriptive caption for this image.",
+        image
+    ])
 
-    response.raise_for_status()
-
-    result = response.json()
-
-    return result[0]["generated_text"]
+    return response.text.strip()
